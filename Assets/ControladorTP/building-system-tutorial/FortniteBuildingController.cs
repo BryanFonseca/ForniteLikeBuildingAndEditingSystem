@@ -11,8 +11,6 @@ public class FortniteBuildingController : MonoBehaviour {
 
 	private GameObject baseSquare;
 	private GameObject buildingGuides;
-    public Vector3 distance;
-    // public GameObject inspect;
 
 	void Start () {
 		generateBuildingGuides();
@@ -20,7 +18,6 @@ public class FortniteBuildingController : MonoBehaviour {
 	
 	void Update () {
 		CalculateBaseSquarePosition();
-        // Debug.Log(inspect.transform.forward);
 	}
 
 	void FixedUpdate() {
@@ -32,9 +29,8 @@ public class FortniteBuildingController : MonoBehaviour {
             {
                 GameObject wall = hitInfo.collider.gameObject;
                 wall.GetComponent<MeshRenderer>().material = buildingGuidesMaterial;
-                Vector3 hitPosition = wall.transform.position;
                 // distancia entre el personaje y la pared que tiene en frente
-                Vector3 hitDistance = hitPosition - transform.position;
+                Vector3 hitDistance = wall.transform.position - transform.position;
                 // La magnitud de (distance * wall.transform.forward) es la distancia "vertical"
                 // Ya que al multiplicar las componentes que no sean la azul, serán 0
                 // Otro enfoque que funciona independientemente de la rotación es usar hitInfo.normal
@@ -90,40 +86,4 @@ public class FortniteBuildingController : MonoBehaviour {
                 return wall;
             }).ToArray();
 	}
-
- /*
-	void generateBuildingGuides() {
-		buildingGuides = GameObject.Find("BuildingGuides");
-
-		baseSquare = GameObject.CreatePrimitive(PrimitiveType.Cube);
-		baseSquare.transform.localScale = new Vector3(baseSquareLength, .1f, baseSquareLength);
-		baseSquare.transform.parent = buildingGuides.transform;
-		baseSquare.GetComponent<MeshRenderer>().material = buildingGuidesMaterial;
-		// baseSquare.GetComponent<BoxCollider>().isTrigger = true;
-		baseSquare.name = "BaseFloor";
-
-		// walls start counting from 0 clockwise
-		for (int i = 0; i < firstLevelWalls.Length; i++) {
-			firstLevelWalls[i] = GameObject.CreatePrimitive(PrimitiveType.Cube);
-			firstLevelWalls[i].name = "wall_" + i;
-			firstLevelWalls[i].transform.parent = GameObject.Find("FirstLevelWalls").transform;
-			firstLevelWalls[i].GetComponent<BoxCollider>().isTrigger = true;
-			firstLevelWalls[i].GetComponent<BoxCollider>().size = new Vector3(1, 1.2f, 1);
-			firstLevelWalls[i].tag = "BuildingReference";
-			firstLevelWalls[i].layer = 12;
-		}
-
-		firstLevelWalls[0].transform.localScale = new Vector3(4.5f, 4, 0.1f);
-		firstLevelWalls[0].transform.localPosition = new Vector3(0f, 2, 2.25f);
-
-		firstLevelWalls[1].transform.localScale = new Vector3(0.1f, 4, 4.5f);
-		firstLevelWalls[1].transform.localPosition = new Vector3(2.25f, 2, 0);
-
-		firstLevelWalls[2].transform.localScale = new Vector3(0.1f, 4, 4.5f);
-		firstLevelWalls[2].transform.localPosition = new Vector3(-2.25f, 2, 0);
-
-		firstLevelWalls[3].transform.localScale = new Vector3(4.5f, 4, 0.1f);
-		firstLevelWalls[3].transform.localPosition = new Vector3(0f, 2, -2.25f);
-	}
-    */
 }
