@@ -2,18 +2,23 @@
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.SceneManagement;
+
 
 public class FortniteBuildingController : MonoBehaviour {
 	public float baseSquareLength = 4.5f;
-	private GameObject[] firstLevelWalls = new GameObject[4];
-	public Material buildingGuidesMaterial;
+	public Material visibleMaterial;
 	public Material invisibleMaterial;
 
-	private GameObject baseSquare;
 	private GameObject buildingGuides;
+	private Wall baseSquare;
+	private Wall[] firstLevelWalls = new Wall[4];
 
 	void Start () {
-		generateBuildingGuides();
+		GenerateBuildingGuides();
+        GameObject emptyObject = new GameObject("EmptyObject");
+        // Attach the GameObject to the current scene
+        SceneManager.MoveGameObjectToScene(emptyObject, SceneManager.GetActiveScene());
 	}
 	
 	void Update () {
@@ -21,14 +26,14 @@ public class FortniteBuildingController : MonoBehaviour {
 	}
 
 	void FixedUpdate() {
-        firstLevelWalls.ToList().ForEach(wall => wall.GetComponent<MeshRenderer>().material = invisibleMaterial);
+        // firstLevelWalls.ToList().ForEach(wall => wall.GetComponent<MeshRenderer>().material = invisibleMaterial);
+        firstLevelWalls.ToList().ForEach(wall => wall.Hide());
         if (Physics.Raycast(transform.position, transform.forward, out RaycastHit hitInfo, 10, LayerMask.GetMask("BuildingReference")))
         {
             Debug.DrawLine(transform.position, hitInfo.point);
-            if (hitInfo.collider.tag == "BuildingReference")
+            if (hitInfo.collider.TryGetComponent(out Wall wall))
             {
-                GameObject wall = hitInfo.collider.gameObject;
-                wall.GetComponent<MeshRenderer>().material = buildingGuidesMaterial;
+                wall.Show();
                 // distancia entre el personaje y la pared que tiene en frente
                 Vector3 hitDistance = wall.transform.position - transform.position;
                 // La magnitud de (distance * wall.transform.forward) es la distancia "vertical"
@@ -59,31 +64,34 @@ public class FortniteBuildingController : MonoBehaviour {
 		print("Building like in Fortnite");
 	}
 
-	void generateBuildingGuides() {
+	void GenerateBuildingGuides() {
 		buildingGuides = GameObject.Find("BuildingGuides");
 
-		baseSquare = GameObject.CreatePrimitive(PrimitiveType.Cube);
-		baseSquare.transform.localScale = new Vector3(baseSquareLength, .1f, baseSquareLength);
-		baseSquare.transform.parent = buildingGuides.transform;
-		baseSquare.GetComponent<MeshRenderer>().material = buildingGuidesMaterial;
-		// baseSquare.GetComponent<BoxCollider>().isTrigger = true;
-		baseSquare.name = "BaseFloor";
+		baseSquare = CreateWallGuide(buildingGuides, "BaseFloor");
+        Quaternion floorRotation = Quaternion.Euler(90, 0, 0);
+        baseSquare.Init(visibleMaterial, invisibleMaterial).Place(Vector3.zero, floorRotation);
 		// walls start counting from 0 clockwise
+        GameObject firstLevelWallsParent = GameObject.Find("FirstLevelWalls");
         firstLevelWalls = firstLevelWalls
             .Select((wall, i) => {
-                wall = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                wall.name = "wall_" + i;
-                wall.transform.parent = GameObject.Find("FirstLevelWalls").transform;
+                wall = CreateWallGuide(firstLevelWallsParent, "wall_" + i);
+                Quaternion wallRotation = Quaternion.Euler(0, 90f * i, 0);
+                wall.Init(visibleMaterial, invisibleMaterial).Place(Vector3.zero, wallRotation);
+                wall.transform.position += (wall.transform.forward * baseSquareLength / 2) + new Vector3(0, wall.transform.localScale.y / 2, 0);
                 wall.GetComponent<BoxCollider>().isTrigger = true;
                 wall.GetComponent<BoxCollider>().size = new Vector3(1, 1.2f, 1);
                 wall.tag = "BuildingReference";
-                wall.layer = 12;
-
-                float height = 4f;
-                wall.transform.localScale = new Vector3(baseSquareLength, height, 0.1f);
-                wall.transform.localRotation = Quaternion.Euler(0, 90f * i, 0);
-                wall.transform.position += (wall.transform.forward * baseSquareLength / 2) + new Vector3(0, height / 2, 0);
                 return wall;
             }).ToArray();
 	}
+
+    // Intended to be used as a fallback if no wall prefab is provided
+    Wall CreateWallGuide(GameObject parent, string name) {
+        GameObject wall = GameObject.CreatePrimitive(PrimitiveType.Cube);
+		wall.name = name;
+		wall.transform.parent = parent.transform;
+        wall.transform.localScale = new Vector3(baseSquareLength, baseSquareLength, 0.1f);
+        wall.layer = 12;
+        return wall.AddComponent<Wall>();
+    }
 }
