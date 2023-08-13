@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class ControladorTerceraPersona : MonoBehaviour 
+public class ControladorTerceraPersona : MonoBehaviour
 {
     private Animator anim;
     private CharacterController charController;
@@ -15,71 +15,80 @@ public class ControladorTerceraPersona : MonoBehaviour
     public LayerMask FloorMask, IgnoreRaycast;
     public float sensitivity = 5f, groundCheckerRadius = .4f, speed;
 
+    private float currentVelocity = 0f;
+    public float smoothTime = 0.3f;
+    float speedFactor = 1f;
 
-    private void Awake() {
+
+    private void Awake()
+    {
         anim = gameObject.GetComponent<Animator>();
         // layer 1 is torso
         anim.SetLayerWeight(1, 1);
         charController = gameObject.GetComponent<CharacterController>();
     }
 
-    public void Update() {
+    public void Update()
+    {
         movement();
         setAnimatorParameters();
     }
 
-    void moveForward(float verticalActivation) {
-        if (isHittingWall) {
+    void moveForward(float verticalActivation)
+    {
+        if (isHittingWall)
+        {
             verticalAnimatorActivation = Mathf.Lerp(verticalAnimatorActivation, 0, Time.deltaTime * 4.5f);
             return;
         }
         verticalAnimatorActivation = Mathf.MoveTowards(verticalAnimatorActivation, verticalActivation, Time.deltaTime * 3);
     }
 
-    void movement() {
-        if (Input.GetKey(KeyCode.W)) {
-            if (Input.GetKey(KeyCode.LeftShift)) {
-                moveForward(1f);
-            } else {
-                moveForward(0.5f);
-            }
-        } else if(Input.GetKey(KeyCode.S)) {
-            moveForward(-1f);
-        } else {
-            verticalAnimatorActivation = Mathf.MoveTowards(verticalAnimatorActivation, 0, Time.deltaTime * 2);
-            // verticalAnimatorActivation = Mathf.Lerp(verticalAnimatorActivation, 0, Time.deltaTime * 6); // looks good too
-        }
-
-        horizontalAnimatorActivation = Mathf.Lerp(horizontalAnimatorActivation, Mathf.Clamp(Input.GetAxis("Horizontal"), -.5f, .5f), Time.deltaTime*15);
+    void movement()
+    {
+        bool isSprinting = !Input.GetKey(KeyCode.LeftShift);
+        speedFactor = Mathf.SmoothDamp(speedFactor, isSprinting ? 0.5f : 1f, ref currentVelocity, smoothTime);
+        verticalAnimatorActivation = Input.GetAxis("Vertical") * speedFactor;
+        horizontalAnimatorActivation = Mathf.Clamp(Input.GetAxis("Horizontal") * speedFactor * 1.5f , -1, 1);
+        Debug.Log(horizontalAnimatorActivation);
+        // horizontalAnimatorActivation = Mathf.Lerp(horizontalAnimatorActivation, Mathf.Clamp(Input.GetAxis("Horizontal"), -.5f, .5f), Time.deltaTime * 15);
         mouseXAnimatorActivation = Mathf.Lerp(mouseXAnimatorActivation, Mathf.Clamp(Input.GetAxis("Mouse X"), -1, 1), Time.deltaTime * 5f);
 
         transform.Rotate(Vector3.up * Time.deltaTime * sensitivity * Input.GetAxis("Mouse X") * 10);
-        
+
         speed = charController.velocity.magnitude;
-        wallDetection();
-        groundDetection();
+        // wallDetection();
+        // groundDetection();
     }
 
-    void wallDetection() {
+    void wallDetection()
+    {
         isHittingWall = false;
 
         RaycastHit wallHit;
-        if (Physics.Raycast(new Vector3(transform.position.x, transform.position.y + 1f, transform.position.z), transform.forward, out wallHit, 1f)) {
-            if (wallHit.collider.tag == "Pared" && wallHit.distance <= 1f) {
-                if (speed <= 1) {
+        if (Physics.Raycast(new Vector3(transform.position.x, transform.position.y + 1f, transform.position.z), transform.forward, out wallHit, 1f))
+        {
+            if (wallHit.collider.tag == "Pared" && wallHit.distance <= 1f)
+            {
+                if (speed <= 1)
+                {
                     isHittingWall = true;
                 }
             }
         }
     }
 
-    void groundDetection() {        
+    void groundDetection()
+    {
         bool otroSuelo = Physics.CheckSphere(groundChecker.position, groundCheckerRadius, IgnoreRaycast);
         enSuelo = Physics.CheckSphere(groundChecker.position, groundCheckerRadius, FloorMask) || otroSuelo;
 
-        if (!enSuelo) {            
+        if (!enSuelo)
+        {
             velocity += new Vector3(0, -9.8f * Time.deltaTime, 0);
-        } else {
+        }
+        else
+        {
             velocity = Vector3.zero;
         }
     }
@@ -96,12 +105,14 @@ public class ControladorTerceraPersona : MonoBehaviour
         //anim.SetBool("Cayendo",!enSuelo);
     }
 
-    void OnAnimatorIK() {
+    void OnAnimatorIK()
+    {
         anim.SetLookAtWeight(1);
         anim.SetLookAtPosition(lookAtPoint.position);
     }
 
-    public Animator GetAnimator() {
+    public Animator GetAnimator()
+    {
         return this.anim;
     }
 
