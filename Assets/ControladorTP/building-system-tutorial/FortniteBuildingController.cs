@@ -70,6 +70,7 @@ public class FortniteBuildingController : MonoBehaviour {
 		baseSquare = CreateWallGuide(buildingGuides, "BaseFloor");
         Quaternion floorRotation = Quaternion.Euler(90, 0, 0);
         baseSquare.Init(visibleMaterial, invisibleMaterial).Place(Vector3.zero, floorRotation);
+        baseSquare.GetComponent<BoxCollider>().isTrigger = true;
 		// walls start counting from 0 clockwise
         GameObject firstLevelWallsParent = GameObject.Find("FirstLevelWalls");
         firstLevelWalls = firstLevelWalls
